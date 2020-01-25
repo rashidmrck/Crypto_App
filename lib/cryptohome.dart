@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class CryptoHome extends StatefulWidget {
   @override
@@ -9,8 +12,8 @@ class _CryptoHomeState extends State<CryptoHome> {
   List currencies;
 
   @override
-  void initState() async {
-    currencies = await _getCurrencies();
+  void initState() {
+    _getCurrencies();
     super.initState();
   }
 
@@ -29,18 +32,30 @@ class _CryptoHomeState extends State<CryptoHome> {
       child: Column(
         children: <Widget>[
           Flexible(
-            child: ListView.builder(
-              itemCount: 0,
-              itemBuilder: (BuildContext context, int index) {},
-            ),
+            child: currencies == null
+                ? Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    itemCount: currencies.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      return Card(
+                        child: ListTile(
+                          title: Text(currencies[index]['name']),
+                        ),
+                      );
+                    },
+                  ),
           )
         ],
       ),
     );
   }
 
-  Future<List> _getCurrencies() async {
+  Future<Null> _getCurrencies() async {
     String url = 'https://api.coinmarketcap.com/v1/ticker/?limit=50';
-    
+    var response = await http.post(url,headers: {'Accept': 'application/json'});
+    print(response.body);
+    setState(() {
+      currencies = jsonDecode(response.body);
+    });
   }
 }
