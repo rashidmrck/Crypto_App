@@ -9,8 +9,8 @@ class CryptoHome extends StatefulWidget {
 }
 
 class _CryptoHomeState extends State<CryptoHome> {
-  List currencies;
-
+  List _currencies;
+  final List<Color> _color = [Colors.black, Colors.indigo, Colors.red];
   @override
   void initState() {
     _getCurrencies();
@@ -32,16 +32,15 @@ class _CryptoHomeState extends State<CryptoHome> {
       child: Column(
         children: <Widget>[
           Flexible(
-            child: currencies == null
+            child: _currencies == null
                 ? Center(child: CircularProgressIndicator())
                 : ListView.builder(
-                    itemCount: currencies.length,
+                    itemCount: _currencies.length,
                     itemBuilder: (BuildContext context, int index) {
-                      return Card(
-                        child: ListTile(
-                          title: Text(currencies[index]['name']),
-                        ),
-                      );
+                      final Map currency = _currencies[index];
+                      final Color color = _color[index % _color.length];
+                      // print(color);
+                      return _getListitemUI(currency, color);
                     },
                   ),
           )
@@ -52,10 +51,43 @@ class _CryptoHomeState extends State<CryptoHome> {
 
   Future<Null> _getCurrencies() async {
     String url = 'https://api.coinmarketcap.com/v1/ticker/?limit=50';
-    var response = await http.post(url,headers: {'Accept': 'application/json'});
-    print(response.body);
+    var response = await http.get(url, headers: {'Accept': 'application/json'});
+    // print(response.body);
     setState(() {
-      currencies = jsonDecode(response.body);
+      _currencies = jsonDecode(response.body);
     });
+  }
+
+  ListTile _getListitemUI(Map currency, Color color) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: color,
+        child: Text(currency['name'][0]),
+      ),
+      title: Text(
+        currency['name'],
+        style: TextStyle(fontWeight: FontWeight.bold),
+      ),
+      subtitle: _getSubTitleText(
+          currency['price_usd'], currency['percent_change_1h']),
+      isThreeLine: true,
+    );
+  }
+
+  Widget _getSubTitleText(String priceUSD, String change) {
+    TextSpan priceTextWidget =
+        TextSpan(text: '\$$priceUSD\n', style: TextStyle(color: Colors.black));
+    TextSpan percentageChangeWidget;
+
+    if (0 < double.parse(change)) {
+      percentageChangeWidget =
+          TextSpan(text: change, style: TextStyle(color: Colors.green));
+    } else {
+      percentageChangeWidget =
+          TextSpan(text: change, style: TextStyle(color: Colors.red));
+    }
+
+    return RichText(
+        text: TextSpan(children: [priceTextWidget, percentageChangeWidget]));
   }
 }
